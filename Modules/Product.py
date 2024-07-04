@@ -15,7 +15,7 @@ class Product(BaseScraper):
         super().__init__()
         self.url, self.seller = url, seller
         self.images, self.images_servers = [], []
-        self.description, self.base_route = None, None
+        self.description, self.base_route, self.SKU = None, None, None
         self.name, self.page, self.cards = None, None, None
         self.price, self.old_price, self.discount = None, None, None
 
@@ -55,12 +55,34 @@ class Product(BaseScraper):
                     self.discount = texts[2].text
                 else:
                     self.price = texts[0].text
+
+        lists = self.page.find_all('li')
+        for li in lists:
+            spans = li.find_all('span')
+            for span in spans:
+                if span.text == 'SKU':
+                    self.SKU = li.text.replace('SKU: ', '')
+                    break
+            if self.SKU is not None:
+                break
+
+        for c in r'\/:*?"<>|':
+            self.name = self.name.replace(c, '')
+
+        self.name = self.name.replace('/', '_')
         os.makedirs("ScrapedData", exist_ok=True)
         os.makedirs(os.path.join("ScrapedData", self.seller), exist_ok=True)
+        counter = 0
+        while os.path.exists(os.path.join(os.path.join("ScrapedData", self.seller), self.name)):
+            if self.name.endswith(f'_{counter}'):
+                counter += 1
+                self.name = self.name.replace(f'_{counter - 1}', f'_{counter}')
+            else:
+                self.name += f'_{counter}'
+
         os.makedirs(os.path.join(os.path.join("ScrapedData", self.seller), self.name), exist_ok=True)
         os.makedirs(os.path.join(os.path.join(os.path.join("ScrapedData", self.seller), self.name), "images"),
                     exist_ok=True)
-
         self.base_route = os.path.join(os.path.join("ScrapedData", self.seller), self.name)
 
     def get_images(self):
@@ -121,6 +143,7 @@ class Product(BaseScraper):
 
         product_data = {
             "name": self.name,
+            "SKU": self.SKU,
             "price": self.price,
             "old_price": self.old_price,
             "discount": self.discount,

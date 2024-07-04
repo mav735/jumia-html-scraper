@@ -1,6 +1,6 @@
 class Converter:
     """
-    Class for converting from html to markdown format
+    Class for converting from html to Markdown format
     """
     def __init__(self, main_block):
         self.main_block = main_block
